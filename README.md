@@ -1,33 +1,71 @@
 # DigitalHub Retail Database Manager
 
-A command-line retail database application for customers, stores, products and orders.
+A Python command-line application for maintaining a retail database and exploring joined sales records. Developed for EGE311 Database Design & Applications, it combines a MySQL schema with menus for record management, search, reporting, and account registration.
 
-**Technology:** Python and MySQL.
+**Stack:** Python 3 · MySQL · `mysql-connector-python` · `bcrypt`
 
-## Run or inspect
+## Features
 
-Use Python and a compatible MySQL server. Start with an empty `digitalhub` database and import `database/schema.sql`, for example in MySQL Workbench. The schema intentionally contains no original customer records or user credentials.
+- Register and authenticate application users using bcrypt password hashes.
+- Read, create, update, and delete records through the admin menu.
+- Use a smaller read/search menu for staff.
+- Search selected columns with the operators exposed by the application.
+- Filter reports by country, date range, store, and product category.
+- Display all report rows or limit the number printed.
 
-```sh
-python -m pip install -r requirements.txt
-```
+**Access-control limitation:** the original application asks the signed-in user to choose Admin or Staff. This is menu separation, not enforced role-based authorization. Do not use it to protect real retail records.
 
-Set the environment variables listed in `.env.example` in your terminal. The program uses the process environment; it does not automatically load `.env` files. For example in PowerShell:
+## Database structure
 
-```powershell
-$env:DIGITALHUB_DB_HOST = "localhost"
-$env:DIGITALHUB_DB_USER = "root"
-$env:DIGITALHUB_DB_PASSWORD = "YOUR_LOCAL_DATABASE_PASSWORD"
-$env:DIGITALHUB_DB_NAME = "digitalhub"
-python src/main.py
-```
+| Table | Stored information |
+| --- | --- |
+| `customers` | Customer details and locations |
+| `stores` | Store locations, floor area, and opening dates |
+| `products` | Product attributes, cost, price, and category |
+| `order_details` | Order number, line item, and purchased quantity |
+| `orders` | Dates and references to customer, store, product, and order details |
+| `users` | Usernames, password hashes, per-user pepper values, and creation timestamps |
 
-Register a new user through the application. Populate an empty database using your own test records. Original schema and application behaviour are otherwise retained. MySQL table-name case handling can differ across operating systems; the original queries use mixed case. This is coursework, not a reviewed production access-control system.
+The committed [schema](database/schema.sql) is the implementation reference. It includes foreign keys from `orders` to the other retail tables. Customer deletion cascades to related orders; the other referenced records use restrictive deletion rules. The schema has no original rows, accounts, hashes, or pepper values.
 
-## Repository preparation
+## Local setup
 
-Source and required assets were organised from existing coursework. Build outputs and IDE state are excluded. Original reports, slides and course handouts remain in the separate full backup; they are not bundled for public upload. Real credentials and original database records are not included.
+1. Start a compatible MySQL server and open `database/schema.sql` in MySQL Workbench or another SQL client. Execute it to create the empty `digitalhub` database and its tables.
+2. From the repository root, install the Python dependencies:
 
-## Validation status
+   ```sh
+   python -m pip install -r requirements.txt
+   ```
 
-The preparation checked file paths, Python syntax where applicable, structured files, credential removal and package integrity. Windows desktop apps, Flutter apps, hardware and online services have not been built or run in this environment.
+3. Set the connection variables in the same terminal that launches the program. For PowerShell:
+
+   ```powershell
+   $env:DIGITALHUB_DB_HOST = "localhost"
+   $env:DIGITALHUB_DB_USER = "YOUR_LOCAL_DATABASE_USER"
+   $env:DIGITALHUB_DB_PASSWORD = "YOUR_LOCAL_DATABASE_PASSWORD"
+   $env:DIGITALHUB_DB_NAME = "digitalhub"
+   python src/main.py
+   ```
+
+4. Choose **Register**, create your own application account, then log in. Use synthetic records to explore the database features.
+
+[.env.example](.env.example) documents the variable names. The script reads the process environment; merely copying that file to `.env` will not load it.
+
+## Source guide
+
+| Path | Purpose |
+| --- | --- |
+| [src/main.py](src/main.py) | Connection handling, authentication, CRUD, search, reports, and menus |
+| [database/schema.sql](database/schema.sql) | Six-table schema without source data |
+| [requirements.txt](requirements.txt) | Python dependencies |
+
+## Troubleshooting and limitations
+
+- Connection errors: check that MySQL is running, the variables are set in the active terminal, and the database user has the necessary privileges.
+- Table-not-found errors: the historical application mixes table-name case. MySQL case handling can differ between operating systems; review query names against the schema.
+- Empty reports: a fresh import contains no business data. Related customer, store, product, and order-detail records must exist before linked orders can be inserted.
+- Password input is ordinary console input, and peppers are stored alongside hashes. This is preserved coursework rather than a production authentication design.
+
+## Credits and verification
+
+The original EGE311 project report identifies **Chua Jia Sheng**. Python syntax and the schema's source structure were inspected; a live MySQL import, database operations, and authentication flows have not been tested here. The original database export and report are not published in this repository.
