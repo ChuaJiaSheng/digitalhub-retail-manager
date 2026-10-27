@@ -28,28 +28,72 @@ A Python command-line application for maintaining a retail database and explorin
 
 The committed [schema](database/schema.sql) is the implementation reference. It includes foreign keys from `orders` to the other retail tables. Customer deletion cascades to related orders; the other referenced records use restrictive deletion rules. The schema has no original rows, accounts, hashes, or pepper values.
 
-## Local setup
+## Reproduce locally
 
-1. Start a compatible MySQL server and open `database/schema.sql` in MySQL Workbench or another SQL client. Execute it to create the empty `digitalhub` database and its tables.
-2. From the repository root, install the Python dependencies:
+**Prerequisites:** Git, Python 3, a running MySQL server, and MySQL Workbench or the `mysql` client. For the unchanged coursework queries, use an instance with case-insensitive table names, as is usual with MySQL on Windows. Check `SHOW VARIABLES LIKE 'lower_case_table_names';`: an instance returning `0` needs query/schema casing reconciled before every feature will work. Do not change this server setting blindly on an existing database.
 
-   ```sh
-   python -m pip install -r requirements.txt
-   ```
+### 1. Clone and install
 
-3. Set the connection variables in the same terminal that launches the program. For PowerShell:
+```powershell
+git clone https://github.com/ChuaJiaSheng/digitalhub-retail-manager.git
+cd digitalhub-retail-manager
+python -m venv .venv
+.\\.venv\\Scripts\\python.exe -m pip install -r requirements.txt
+```
 
-   ```powershell
-   $env:DIGITALHUB_DB_HOST = "localhost"
-   $env:DIGITALHUB_DB_USER = "YOUR_LOCAL_DATABASE_USER"
-   $env:DIGITALHUB_DB_PASSWORD = "YOUR_LOCAL_DATABASE_PASSWORD"
-   $env:DIGITALHUB_DB_NAME = "digitalhub"
-   python src/main.py
-   ```
+### 2. Create the schema
 
-4. Choose **Register**, create your own application account, then log in. Use synthetic records to explore the database features.
+In MySQL Workbench, connect to your local server, open `database/schema.sql`, and execute it. The file creates `digitalhub` and six tables. Check:
 
-[.env.example](.env.example) documents the variable names. The script reads the process environment; merely copying that file to `.env` will not load it.
+```sql
+USE digitalhub;
+SHOW TABLES;
+```
+
+Expect `customers`, `stores`, `products`, `order_details`, `orders`, and `users`.
+
+### 3. Configure and launch
+
+In the same PowerShell terminal as the cloned project:
+
+```powershell
+$env:DIGITALHUB_DB_HOST = "localhost"
+$env:DIGITALHUB_DB_USER = "YOUR_LOCAL_DATABASE_USER"
+$env:DIGITALHUB_DB_PASSWORD = "YOUR_LOCAL_DATABASE_PASSWORD"
+$env:DIGITALHUB_DB_NAME = "digitalhub"
+.\\.venv\\Scripts\\python.exe src/main.py
+```
+
+Use a local database user with privileges on `digitalhub`. These are MySQL credentials; they are separate from the application account you create next. The script reads process environment variables, not an automatically loaded `.env` file.
+
+### 4. Check an empty installation
+
+Choose **Register**, create a demo application account, then log in. Choose Staff to read/search the empty tables, or Admin for the CRUD/report menus. The login/menu flow should appear even before you insert retail data. A new database correctly returns empty results.
+
+### 5. Add a synthetic report example
+
+On a fresh demo database, execute this SQL in Workbench once:
+
+```sql
+USE digitalhub;
+INSERT INTO customers (Customers_Name) VALUES ('Demo Customer');
+SET @customer_id = LAST_INSERT_ID();
+INSERT INTO stores (Stores_Country) VALUES ('Singapore');
+SET @store_id = LAST_INSERT_ID();
+INSERT INTO products (Product_Name, Product_Unit_Price, Product_Category)
+VALUES ('Demo Keyboard', 20.00, 'Accessories');
+SET @product_id = LAST_INSERT_ID();
+INSERT INTO order_details (Order_Number, Line_Item, Purchased_Quantity)
+VALUES (1001, 1, 2);
+SET @detail_id = LAST_INSERT_ID();
+INSERT INTO orders
+(Order_Details_ID, Order_Date, Customers_ID, Stores_ID, Product_ID)
+VALUES (@detail_id, '2024-01-01', @customer_id, @store_id, @product_id);
+```
+
+Select **Display Report** in the Admin menu, leave filters empty, then print all rows. **Expected result:** the demo row should show `Demo Keyboard`, quantity `2`, unit price `20.00`, and calculated sales `40.00`. This is a reproduction check, not a real transaction. Re-running the inserts creates another demo order.
+
+If connection fails, verify the server, credentials, and selected database. If reporting fails with a table-not-found error, check table-name case handling before changing the report logic.
 
 ## Source guide
 
