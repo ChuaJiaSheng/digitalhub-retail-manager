@@ -66,6 +66,6 @@ The committed [schema](database/schema.sql) is the implementation reference. It 
 - Empty reports: a fresh import contains no business data. Related customer, store, product, and order-detail records must exist before linked orders can be inserted.
 - Password input is ordinary console input, and peppers are stored alongside hashes. This is preserved coursework rather than a production authentication design.
 
-## Credits and verification
+## Author
 
-The original EGE311 project report identifies **Chua Jia Sheng**. Python syntax and the schema's source structure were inspected; a live MySQL import, database operations, and authentication flows have not been tested here. The original database export and report are not published in this repository.
+Chua Jia Sheng.
